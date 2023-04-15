@@ -17,7 +17,7 @@
           pprev.setuptools
         ];
 
-        propagatedBuildInputs = with pprev; [
+        propagatedBuildInputs = with pfinal; [
           (pprev.buildPythonPackage rec {
             pname = "accelerate";
             version = "0.18.0";
@@ -137,7 +137,6 @@
     overlay = final: prev: {
       python3 = prev.python3.override {
         packageOverrides = pfinal: pprev: {
-          fastchat = python3Overlay final prev pfinal pprev;
           huggingface-hub = pprev.huggingface-hub.overrideAttrs (oA: {
             version = "0.13.4";
             src = prev.fetchFromGitHub {
@@ -147,6 +146,34 @@
               hash = "sha256-gauEwI923jUd3kTZpQ2VRlpHNudytz5k10n1yFo0Mm8=";
             };
           });
+
+          transformers = pprev.transformers.overrideAttrs (oA: {
+            version = "4.28.1";
+            src = prev.fetchFromGitHub {
+              owner = "huggingface";
+              repo = "transformers";
+              rev = "refs/tags/v4.28.1";
+              hash = "sha256-FmiuWfoFZjZf1/GbE6PmSkeshWWh+6nDj2u2PMSeDk0=";
+            };
+          });
+          tokenizers = pprev.tokenizers.overrideAttrs (oA: rec {
+            version = "0.13.3";
+            src = prev.fetchFromGitHub {
+              owner = "newAM";
+              repo = oA.pname;
+              rev = "2f9cedf12093fe8f4dd7231b11822c6e5e77fe16";
+              hash = "sha256-QeyigJ7hF4bZKc007XrgPP8SPFO4at7xGVV3EnYVeBM=";
+            };
+
+            cargoDeps = prev.rustPlatform.fetchCargoTarball {
+              inherit src;
+              inherit (oA) sourceRoot;
+              name = "${oA.pname}-${version}";
+              hash = "sha256-um5ABsvrb2T7HYyTyI256NRCTNiTbJFASaUPYGo9INA=";
+            };
+          });
+
+          fastchat = python3Overlay final prev pfinal pprev;
         };
       };
 
@@ -161,10 +188,13 @@
     packages.x86_64-linux.default = pkgs.python3Packages.fastchat;
 
     devShells.x86_64-linux.default = pkgs.mkShell {
-      NIX_LD_LIBRARY_PATH = nixpkgs.lib.makeLibraryPath [
-        pkgs.stdenv.cc.cc
+      buildInputs = [
+        pkgs.python3Packages.fastchat
       ];
-      NIX_LD = nixpkgs.lib.fileContents "${pkgs.stdenv.cc}/nix-support/dynamic-linker";
+      # NIX_LD_LIBRARY_PATH = nixpkgs.lib.makeLibraryPath [
+      #   pkgs.stdenv.cc.cc
+      # ];
+      # NIX_LD = nixpkgs.lib.fileContents "${pkgs.stdenv.cc}/nix-support/dynamic-linker";
     };
   };
 }
