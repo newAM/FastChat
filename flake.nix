@@ -31,7 +31,7 @@
               setuptools
             ];
 
-            propagatedBuildInputs = with pprev; [
+            propagatedBuildInputs = with pfinal; [
               numpy
               packaging
               psutil
@@ -146,16 +146,6 @@
               hash = "sha256-gauEwI923jUd3kTZpQ2VRlpHNudytz5k10n1yFo0Mm8=";
             };
           });
-
-          transformers = pprev.transformers.overrideAttrs (oA: {
-            version = "4.28.1";
-            src = prev.fetchFromGitHub {
-              owner = "huggingface";
-              repo = "transformers";
-              rev = "refs/tags/v4.28.1";
-              hash = "sha256-FmiuWfoFZjZf1/GbE6PmSkeshWWh+6nDj2u2PMSeDk0=";
-            };
-          });
           tokenizers = pprev.tokenizers.overrideAttrs (oA: rec {
             version = "0.13.3";
             src = prev.fetchFromGitHub {
@@ -172,6 +162,18 @@
               hash = "sha256-um5ABsvrb2T7HYyTyI256NRCTNiTbJFASaUPYGo9INA=";
             };
           });
+          torch = pprev.torch.override {
+            cudaSupport = true;
+          };
+          transformers = pprev.transformers.overrideAttrs (oA: {
+            version = "4.28.1";
+            src = prev.fetchFromGitHub {
+              owner = "huggingface";
+              repo = "transformers";
+              rev = "refs/tags/v4.28.1";
+              hash = "sha256-FmiuWfoFZjZf1/GbE6PmSkeshWWh+6nDj2u2PMSeDk0=";
+            };
+          });
 
           fastchat = python3Overlay final prev pfinal pprev;
         };
@@ -183,6 +185,17 @@
     pkgs = import nixpkgs {
       system = "x86_64-linux";
       overlays = [overlay];
+      config.allowUnfreePredicate = pkg:
+        builtins.elem (nixpkgs.lib.getName pkg) [
+          "cuda_cudart"
+          "cuda_cupti"
+          "cuda_nvcc"
+          "cuda_nvprof"
+          "cudatoolkit-11-cudnn"
+          "cudatoolkit"
+          "libcublas"
+          "libcusparse"
+        ];
     };
   in {
     packages.x86_64-linux.default = pkgs.python3Packages.fastchat;
