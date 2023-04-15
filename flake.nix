@@ -200,14 +200,11 @@
   in {
     packages.x86_64-linux.default = pkgs.python3Packages.fastchat;
 
+    # nix develop -c python3 -m fastchat.serve.cli --model-path vicuna-7b
     devShells.x86_64-linux.default = pkgs.mkShell {
       buildInputs = [
         pkgs.python3Packages.fastchat
       ];
-      # NIX_LD_LIBRARY_PATH = nixpkgs.lib.makeLibraryPath [
-      #   pkgs.stdenv.cc.cc
-      # ];
-      # NIX_LD = nixpkgs.lib.fileContents "${pkgs.stdenv.cc}/nix-support/dynamic-linker";
     };
   };
 }
